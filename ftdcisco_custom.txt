@@ -362,7 +362,7 @@
       "logicAppName": "[concat(parameters('resourceNamePrefix'),'-logic-app')]",
       "functionAppName": "[concat(parameters('resourceNamePrefix'),'-function-app')]",
       "appInsightsName": "[concat(parameters('resourceNamePrefix'),'-appinsight')]",
-      "elbPublicIpName": "[concat(variables('elbName'),'-public-ip')]",
+      "elbPublicIpName": "[toLower(concat(parameters('resourceNamePrefix'), '-elb-public-ip'))]",
       "elbId": "[resourceId('Microsoft.Network/loadBalancers',variables('elbName'))]",
       "ilbId": "[resourceId('Microsoft.Network/loadBalancers',variables('ilbName'))]",
       "vnetId": "[resourceId(parameters('virtualNetworkRg'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
@@ -920,7 +920,7 @@
          "properties": {
             "publicIPAllocationMethod": "Static",
             "dnsSettings": {
-               "domainNameLabel": "[variables('elbPublicIpName')]"
+               "domainNameLabel": "[toLower(variables('elbPublicIpName'))]"
             },
             "idleTimeoutInMinutes": "[variables('idleTimeoutInMinutes')]"
          }
