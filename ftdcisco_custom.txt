@@ -438,20 +438,6 @@
          "properties": {
             "securityRules": [
                {
-                  "name": "SSH-Rule",
-                  "properties": {
-                     "description": "Allowing SSH port to access to FTDv instances",
-                     "protocol": "Tcp",
-                     "sourcePortRange": "*",
-                     "destinationPortRange": "22",
-                     "sourceAddressPrefix": "[if(equals(variables('functionHostingPlanType'), 'premium'), reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpAddressName'))).ipAddress, concat('AzureCloud.', resourceGroup().location))]",
-                     "destinationAddressPrefix": "*",
-                     "access": "Allow",
-                     "priority": 100,
-                     "direction": "Inbound"
-                  }
-               },
-               {
                   "name": "HTTPS-Rule",
                   "properties": {
                      "description": "Allow tcp 443",
