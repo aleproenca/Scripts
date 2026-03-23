@@ -1073,7 +1073,7 @@
             "name": "[parameters('vmSize')]",
             "capacity": 0
          },
-         "zones": ["3"],
+		 "zones": ["1", "2", "3"],
          "plan": {
             "name": "[variables('sku')]",
             "publisher": "[variables('publisher')]",
