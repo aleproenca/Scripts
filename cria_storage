@@ -1,0 +1,98 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 24,
+      "metadata": {
+        "description": "Nome da Storage Account (deve ser único globalmente, apenas letras minúsculas e números)"
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Tipo de Storage Account"
+      }
+    },
+    "fileShareName": {
+      "type": "string",
+      "defaultValue": "ftd-functionshare",
+      "metadata": {
+        "description": "Nome do Azure File Share que será criado (ex: sgbprcaixa82fs)"
+      }
+    },
+    "fileShareQuotaGiB": {
+      "type": "int",
+      "defaultValue": 5120,
+      "metadata": {
+        "description": "Tamanho do File Share em GiB (máximo recomendado 5120 para a maioria dos casos)"
+      }
+    }
+  },
+  "variables": {
+    "storageApiVersion": "2023-05-01",
+    "fileServicesApiVersion": "2023-05-01"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "[variables('storageApiVersion')]",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices",
+      "apiVersion": "[variables('fileServicesApiVersion')]",
+      "name": "[concat(parameters('storageAccountName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "apiVersion": "[variables('fileServicesApiVersion')]",
+      "name": "[concat(parameters('storageAccountName'), '/default/', parameters('fileShareName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccountName'), 'default')]"
+      ],
+      "properties": {
+        "shareQuota": "[parameters('fileShareQuotaGiB')]",
+        "enabledProtocols": "SMB"
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[parameters('storageAccountName')]"
+    },
+    "fileShareName": {
+      "type": "string",
+      "value": "[parameters('fileShareName')]"
+    },
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+    }
+  }
+}
