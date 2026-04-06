@@ -2,18 +2,11 @@
   "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "virtualNetworkRg": {
-      "type": "string",
-      "defaultValue": "cisco-virtualnet-rg",
-      "metadata": {
-        "description": "Resource Group onde a VNet será criada (pode ser diferente do RG atual)"
-      }
-    },
     "virtualNetworkName": {
       "type": "string",
       "defaultValue": "cisco-virtualnet",
       "metadata": {
-        "description": "Nome da Virtual Network"
+        "description": "Nome da Virtual Network que será criada"
       }
     },
     "virtualNetworkCidr": {
@@ -23,80 +16,20 @@
         "description": "CIDR da Virtual Network"
       }
     },
-    "mgmtSubnet": {
-      "type": "string",
-      "defaultValue": "cisco-mgmt-subnet",
-      "metadata": {
-        "description": "Nome da subnet de Management"
-      }
-    },
-    "insideSubnet": {
-      "type": "string",
-      "defaultValue": "cisco-inside-subnet",
-      "metadata": {
-        "description": "Nome da subnet Inside"
-      }
-    },
-    "outsideSubnet": {
-      "type": "string",
-      "defaultValue": "cisco-outside-subnet",
-      "metadata": {
-        "description": "Nome da subnet Outside"
-      }
-    },
-    "cclSubnet": {
-      "type": "string",
-      "defaultValue": "ccl",
-      "metadata": {
-        "description": "Nome da subnet Cluster Control Link (CCL)"
-      }
-    },
-    "functionAppSubnet": {
-      "type": "string",
-      "defaultValue": "function-app-subnet",
-      "metadata": {
-        "description": "Nome da subnet para Function App (Premium plan)"
-      }
-    },
-    "mgmtSubnetCIDR": {
-      "type": "string",
-      "defaultValue": "10.0.1.0/24",
-      "metadata": {
-        "description": "CIDR da subnet Management"
-      }
-    },
-    "insideSubnetCIDR": {
-      "type": "string",
-      "defaultValue": "10.0.3.0/24",
-      "metadata": {
-        "description": "CIDR da subnet Inside"
-      }
-    },
-    "outsideSubnetCIDR": {
-      "type": "string",
-      "defaultValue": "10.0.4.0/24",
-      "metadata": {
-        "description": "CIDR da subnet Outside"
-      }
-    },
-    "cclSubnetCIDR": {
-      "type": "string",
-      "defaultValue": "10.0.5.0/24",
-      "metadata": {
-        "description": "CIDR da subnet CCL"
-      }
-    },
-    "functionAppSubnetCIDR": {
-      "type": "string",
-      "defaultValue": "10.0.6.0/24",
-      "metadata": {
-        "description": "CIDR da subnet Function App"
-      }
-    }
+    "mgmtSubnet": { "type": "string", "defaultValue": "cisco-mgmt-subnet" },
+    "insideSubnet": { "type": "string", "defaultValue": "cisco-inside-subnet" },
+    "outsideSubnet": { "type": "string", "defaultValue": "cisco-outside-subnet" },
+    "cclSubnet": { "type": "string", "defaultValue": "ccl" },
+    "functionAppSubnet": { "type": "string", "defaultValue": "function-app-subnet" },
+
+    "mgmtSubnetCIDR": { "type": "string", "defaultValue": "10.0.1.0/24" },
+    "insideSubnetCIDR": { "type": "string", "defaultValue": "10.0.3.0/24" },
+    "outsideSubnetCIDR": { "type": "string", "defaultValue": "10.0.4.0/24" },
+    "cclSubnetCIDR": { "type": "string", "defaultValue": "10.0.5.0/24" },
+    "functionAppSubnetCIDR": { "type": "string", "defaultValue": "10.0.6.0/24" }
   },
   "variables": {
-    "networkApiVersion": "2023-09-01",
-    "vnetId": "[resourceId(parameters('virtualNetworkRg'), 'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+    "networkApiVersion": "2023-09-01"
   },
   "resources": [
     {
@@ -104,7 +37,6 @@
       "apiVersion": "[variables('networkApiVersion')]",
       "name": "[parameters('virtualNetworkName')]",
       "location": "[resourceGroup().location]",
-      "resourceGroup": "[parameters('virtualNetworkRg')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -147,29 +79,13 @@
     }
   ],
   "outputs": {
-    "vnetId": {
+    "virtualNetworkId": {
       "type": "string",
-      "value": "[variables('vnetId')]"
+      "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
     },
     "mgmtSubnetId": {
       "type": "string",
-      "value": "[concat(variables('vnetId'), '/subnets/', parameters('mgmtSubnet'))]"
-    },
-    "insideSubnetId": {
-      "type": "string",
-      "value": "[concat(variables('vnetId'), '/subnets/', parameters('insideSubnet'))]"
-    },
-    "outsideSubnetId": {
-      "type": "string",
-      "value": "[concat(variables('vnetId'), '/subnets/', parameters('outsideSubnet'))]"
-    },
-    "cclSubnetId": {
-      "type": "string",
-      "value": "[concat(variables('vnetId'), '/subnets/', parameters('cclSubnet'))]"
-    },
-    "functionAppSubnetId": {
-      "type": "string",
-      "value": "[concat(variables('vnetId'), '/subnets/', parameters('functionAppSubnet'))]"
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('mgmtSubnet'))]"
     }
   }
 }
