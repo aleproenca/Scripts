@@ -1,5 +1,3 @@
-# Scripts
-
 # Cisco FTDv Auto Scale no Azure (Customizado)
 
 Este repositório contém scripts **customizados** para facilitar a implantação de um cluster **Cisco Threat Defense Virtual (FTDv)** com **Auto Scaling** no Microsoft Azure.
