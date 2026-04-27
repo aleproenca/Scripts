@@ -26,6 +26,8 @@ import copy
 import os
 import shutil
 import sys
+import tempfile
+import traceback
 from pathlib import Path
 
 try:
@@ -199,6 +201,26 @@ def _copy_theme(template_doc, target_doc):
 # Função principal de aplicação
 # ---------------------------------------------------------------------------
 
+def _open_as_docx(path: Path) -> "Document":
+    """
+    Abre qualquer arquivo Word (incluindo .dotx) como um Document do python-docx.
+    Arquivos .dotx têm content-type diferente de .docx; copiá-los para um
+    arquivo temporário com extensão .docx contorna a rejeição do python-docx.
+    """
+    if path.suffix.lower() in (".dotx", ".dot"):
+        tmp = tempfile.NamedTemporaryFile(suffix=".docx", delete=False)
+        try:
+            shutil.copy2(str(path), tmp.name)
+            tmp.close()
+            return Document(tmp.name)
+        finally:
+            try:
+                os.unlink(tmp.name)
+            except OSError:
+                pass
+    return Document(str(path))
+
+
 def apply_template(template_path: Path, input_path: Path, output_path: Path,
                    force_cover: bool = True):
     """
@@ -211,9 +233,8 @@ def apply_template(template_path: Path, input_path: Path, output_path: Path,
     output_path   : Path  – arquivo .docx de saída
     force_cover   : bool  – True = copia capa do template mesmo se doc já tiver
     """
-    # Abre template como documento normal (python-docx lida com .dotx)
-    template_doc = Document(str(template_path))
-    target_doc = Document(str(input_path))
+    template_doc = _open_as_docx(template_path)
+    target_doc = _open_as_docx(input_path)
 
     # 1. Copia estilos
     _copy_styles(template_doc, target_doc)
@@ -321,6 +342,7 @@ def main():
                 apply_template(template_path, doc_path, out_file, force_cover=args.cover)
             except Exception as exc:
                 print(f"  ✖ Erro: {exc}")
+                traceback.print_exc()
 
     # --- Modo arquivo único ---
     elif input_path.is_file():
@@ -334,7 +356,12 @@ def main():
         print(f"Saída    : {output_file}\n")
 
         print(f"→ {input_path.name}")
-        apply_template(template_path, input_path, output_file, force_cover=args.cover)
+        try:
+            apply_template(template_path, input_path, output_file, force_cover=args.cover)
+        except Exception as exc:
+            print(f"  ✖ Erro: {exc}")
+            traceback.print_exc()
+            sys.exit(1)
 
     else:
         sys.exit(f"Entrada não encontrada: {input_path}")
