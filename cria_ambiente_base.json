@@ -1,0 +1,234 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": {
+      "type": "string",
+      "defaultValue": "cisco-virtualnet",
+      "metadata": {
+        "description": "Nome da Virtual Network"
+      }
+    },
+    "virtualNetworkCidr": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "CIDR da Virtual Network"
+      }
+    },
+    "mgmtSubnet": {
+      "type": "string",
+      "defaultValue": "cisco-mgmt-subnet"
+    },
+    "insideSubnet": {
+      "type": "string",
+      "defaultValue": "cisco-inside-subnet"
+    },
+    "outsideSubnet": {
+      "type": "string",
+      "defaultValue": "cisco-outside-subnet"
+    },
+    "cclSubnet": {
+      "type": "string",
+      "defaultValue": "ccl"
+    },
+    "functionAppSubnet": {
+      "type": "string",
+      "defaultValue": "function-app-subnet"
+    },
+    "mgmtSubnetCIDR": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24"
+    },
+    "insideSubnetCIDR": {
+      "type": "string",
+      "defaultValue": "10.0.3.0/24"
+    },
+    "outsideSubnetCIDR": {
+      "type": "string",
+      "defaultValue": "10.0.4.0/24"
+    },
+    "cclSubnetCIDR": {
+      "type": "string",
+      "defaultValue": "10.0.5.0/24"
+    },
+    "functionAppSubnetCIDR": {
+      "type": "string",
+      "defaultValue": "10.0.6.0/24"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 24,
+      "metadata": {
+        "description": "Nome da Storage Account (somente letras minúsculas e números)"
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "SKU da Storage Account"
+      }
+    },
+    "fileShareName": {
+      "type": "string",
+      "defaultValue": "ftd-functionshare",
+      "metadata": {
+        "description": "Nome do Azure File Share"
+      }
+    },
+    "fileShareQuotaGiB": {
+      "type": "int",
+      "defaultValue": 5120,
+      "minValue": 1,
+      "maxValue": 102400,
+      "metadata": {
+        "description": "Quota do File Share em GiB"
+      }
+    }
+  },
+  "variables": {
+    "networkApiVersion": "2023-09-01",
+    "storageApiVersion": "2023-05-01"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "[variables('storageApiVersion')]",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices",
+      "apiVersion": "[variables('storageApiVersion')]",
+      "name": "[concat(parameters('storageAccountName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "apiVersion": "[variables('storageApiVersion')]",
+      "name": "[concat(parameters('storageAccountName'), '/default/', parameters('fileShareName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccountName'), 'default')]"
+      ],
+      "properties": {
+        "shareQuota": "[parameters('fileShareQuotaGiB')]",
+        "enabledProtocols": "SMB"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "[variables('networkApiVersion')]",
+      "name": "[parameters('virtualNetworkName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('virtualNetworkCidr')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('mgmtSubnet')]",
+            "properties": {
+              "addressPrefix": "[parameters('mgmtSubnetCIDR')]"
+            }
+          },
+          {
+            "name": "[parameters('insideSubnet')]",
+            "properties": {
+              "addressPrefix": "[parameters('insideSubnetCIDR')]"
+            }
+          },
+          {
+            "name": "[parameters('outsideSubnet')]",
+            "properties": {
+              "addressPrefix": "[parameters('outsideSubnetCIDR')]"
+            }
+          },
+          {
+            "name": "[parameters('cclSubnet')]",
+            "properties": {
+              "addressPrefix": "[parameters('cclSubnetCIDR')]"
+            }
+          },
+          {
+            "name": "[parameters('functionAppSubnet')]",
+            "properties": {
+              "addressPrefix": "[parameters('functionAppSubnetCIDR')]",
+              "delegations": [
+                {
+                  "name": "function-app-delegation",
+                  "properties": {
+                    "serviceName": "Microsoft.Web/serverfarms",
+                    "actions": [
+                      "Microsoft.Network/virtualNetworks/subnets/action"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[parameters('storageAccountName')]"
+    },
+    "fileShareName": {
+      "type": "string",
+      "value": "[parameters('fileShareName')]"
+    },
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+    },
+    "virtualNetworkId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+    },
+    "mgmtSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('mgmtSubnet'))]"
+    },
+    "insideSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('insideSubnet'))]"
+    },
+    "outsideSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('outsideSubnet'))]"
+    },
+    "cclSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('cclSubnet'))]"
+    },
+    "functionAppSubnetId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('functionAppSubnet'))]"
+    }
+  }
+}

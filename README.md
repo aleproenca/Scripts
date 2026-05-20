@@ -1,92 +1,61 @@
 # Cisco FTDv Auto Scale no Azure (Customizado)
 
-Este repositório contém scripts **customizados** para facilitar a implantação de um cluster **Cisco Threat Defense Virtual (FTDv)** com **Auto Scaling** no Microsoft Azure.
+Este repositório contém templates ARM customizados para facilitar a implantação de um cluster **Cisco Threat Defense Virtual (FTDv)** com **Auto Scaling** no Microsoft Azure.
 
-Baseado na documentação oficial da Cisco:  
-**"Deploy a Threat Defense Virtual Cluster on Azure"** e no guia de Auto Scale para FTDv.
+## 🛠 Arquivos do repositório
 
----
+- `cria_ambiente_base.json`  
+  Cria os objetos base necessários para o ambiente:
+  - Storage Account
+  - Azure File Share
+  - Virtual Network
+  - Subnets: Management, Inside, Outside, CCL e Function App (com delegation para `Microsoft.Web/serverfarms`)
 
-## 📋 Pré-requisitos
+- `cria_ambiente_base.parameters.example.json`  
+  Exemplo de parâmetros para o template `cria_ambiente_base.json`.
 
-Antes de executar qualquer script, você **deve** criar manualmente os seguintes recursos:
+- `cria_storage`  
+  Template separado para criar apenas Storage Account + File Share.
 
-- **Storage Account** (padrão ou Premium) na mesma região do deployment
-- **File Share** dentro dessa Storage Account (usado pela Function App)
+- `cria_vnets_e_subnets`  
+  Template separado para criar apenas VNet + subnets.
 
-> **Importante**: A Storage Account e o File Share precisam ser criados **antes** de aplicar os templates ARM. Os scripts esperam que esses recursos já existam.
+- `ftdcisco_custom.txt`  
+  Template ARM principal do deployment FTDv Auto Scale (VMSS, LBs, Function App, Logic App, integrações e role assignments).
 
----
+## 🚀 Ordem recomendada de deploy
 
-## 🛠 Arquivos do Repositório
+1. Execute `cria_ambiente_base.json` para preparar os pré-requisitos de rede e storage.
+2. Execute o template principal `ftdcisco_custom.txt`.
 
-### 1. `cria_vnets_e_subnets.json`
+## Azure CLI (exemplo)
 
-- Template ARM responsável por criar a **Virtual Network** e todas as **subnets** necessárias.
-- Inclui:
-  - Subnet de Management
-  - Subnet Inside
-  - Subnet Outside
-  - Subnet CCL (Cluster Control Link)
-  - Subnet para Function App (com delegation)
+```bash
+az deployment group create \
+  --resource-group <seu-resource-group> \
+  --template-file cria_ambiente_base.json \
+  --parameters @cria_ambiente_base.parameters.example.json
+```
 
-**Recomendação**: Execute este template primeiro.
+Depois, aplique o template principal:
 
-### 2. `ftdcisco_custom.json` (ou `ftdcisco_custom.txt`)
+```bash
+az deployment group create \
+  --resource-group <seu-resource-group> \
+  --template-file ftdcisco_custom.txt \
+  --parameters <seus-parametros-do-ftd>
+```
 
-- Template ARM customizado principal para o deployment completo do **FTDv Auto Scale**.
-- Inclui:
-  - Virtual Machine Scale Set (VMSS) com FTDv
-  - External Load Balancer (ELB)
-  - Internal Load Balancer (ILB)
-  - Network Security Groups
-  - Azure Function App + Logic App
-  - Role Assignments necessárias
-  - Integração com FMC (Firewall Management Center)
+## ⚙️ Parâmetros importantes no template principal
 
----
+- `existingStorageAccountName`
+- `existingFileShareName`
+- `virtualNetworkName`
+- `mgmtSubnet`, `insideSubnet`, `outsideSubnet`, `cclSubnet`, `functionAppSubnet`
 
-## 🚀 Ordem Recomendada de Deploy
+Garanta que os valores acima coincidam com os recursos criados no template de ambiente base.
 
-1. Crie manualmente a **Storage Account** + **File Share**
-2. Execute o template `cria_vnets_e_subnets.json`
-3. Execute o template `ftdcisco_custom.json`
-
-Você pode fazer o deploy via:
-- Azure Portal (Deploy a custom template)
-- Azure CLI
-- Azure PowerShell
-- GitHub Actions / Terraform + ARM, etc.
-
----
-
-## ⚙️ Parâmetros Importantes
-
-Os templates usam vários parâmetros customizáveis, entre eles:
-
-- `resourceNamePrefix`
-- `virtualNetworkName` / `virtualNetworkCidr`
-- CIDRs das subnets (Management, Inside, Outside, CCL, Function App)
-- `existingStorageAccountName` e `existingFileShareName`
-- `ftdLicensingSku` (`byol` ou `payg`)
-- `softwareVersion`
-- `ftdvNodeCount`
-- `autoscaling` (Enable/Disable)
-- Credenciais do FMC, senhas, etc.
-
-Ajuste os valores conforme sua necessidade antes do deploy.
-
----
-
-## 📖 Documentação Oficial da Cisco
+## 📖 Documentação oficial da Cisco
 
 - [Deploy a Threat Defense Virtual Cluster on Azure](https://www.cisco.com/c/en/us/td/docs/security/secure-firewall/management-center/cluster/deploy-threat-defense-virtual-cluster-azure.html)
 - [Deploy the Firewall Threat Defense Virtual Auto Scale Solution on Azure](https://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/consolidated_ftdv_gsg/threat-defense-virtual-77-gsg/m_deploy-the-firepower-threat-defense-virtual-for-azure-autoscale.html)
-
----
-
-## ⚠️ Observações
-
-- Este é um fork/customização dos templates oficiais da Cisco.
-- Testado para facilitar o uso em ambientes reais (separação da criação da VNet +
-

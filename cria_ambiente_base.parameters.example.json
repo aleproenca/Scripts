@@ -1,0 +1,54 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkName": {
+      "value": "cisco-virtualnet"
+    },
+    "virtualNetworkCidr": {
+      "value": "10.0.0.0/16"
+    },
+    "mgmtSubnet": {
+      "value": "cisco-mgmt-subnet"
+    },
+    "insideSubnet": {
+      "value": "cisco-inside-subnet"
+    },
+    "outsideSubnet": {
+      "value": "cisco-outside-subnet"
+    },
+    "cclSubnet": {
+      "value": "ccl"
+    },
+    "functionAppSubnet": {
+      "value": "function-app-subnet"
+    },
+    "mgmtSubnetCIDR": {
+      "value": "10.0.1.0/24"
+    },
+    "insideSubnetCIDR": {
+      "value": "10.0.3.0/24"
+    },
+    "outsideSubnetCIDR": {
+      "value": "10.0.4.0/24"
+    },
+    "cclSubnetCIDR": {
+      "value": "10.0.5.0/24"
+    },
+    "functionAppSubnetCIDR": {
+      "value": "10.0.6.0/24"
+    },
+    "storageAccountName": {
+      "value": "seustorageaccount"
+    },
+    "storageAccountType": {
+      "value": "Standard_LRS"
+    },
+    "fileShareName": {
+      "value": "ftd-functionshare"
+    },
+    "fileShareQuotaGiB": {
+      "value": 5120
+    }
+  }
+}
